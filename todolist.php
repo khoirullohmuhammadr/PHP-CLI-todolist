@@ -57,7 +57,6 @@ class TodoList
         $tasks = $this->readTasks($latestFile);
 
         if (count($tasks) >= $this->taskLimit) {
-
             $latestFile = $this->getLatestFile();
             $tasks = [];
         }
@@ -94,10 +93,10 @@ class TodoList
             echo "There's no task." . PHP_EOL;
         } else {
             foreach ($allTasks as $i => $task) {
-                echo ($i + 1) . ". " . $task['title'] . " " . PHP_EOL;
+                echo ($i + 1) . ". " . $task['title'] . PHP_EOL;
             }
         }
-        echo PHP_EOL . "Click enter to back into menu...";
+        echo PHP_EOL . "Press Enter to return to the menu...";
         fgets(STDIN);
 
         $this->clearScreen();
@@ -114,29 +113,93 @@ class TodoList
             $index++;
         }
 
-        echo "Masukkan nomor task untuk melihat detail: ";
+        echo "Enter task number to view details: ";
         $taskNumber = (int) trim(fgets(STDIN));
 
         if (isset($allTasks[$taskNumber - 1])) {
             $task = $allTasks[$taskNumber - 1];
-            echo "Judul: " . $task['title'] . PHP_EOL;
-            echo "Deskripsi: " . $task['description'] . PHP_EOL;
+            echo "Title: " . $task['title'] . PHP_EOL;
+            echo "Description: " . $task['description'] . PHP_EOL;
         } else {
-            echo "Task tidak ditemukan." . PHP_EOL;
+            echo "Task not found." . PHP_EOL;
         }
 
-        echo PHP_EOL . "Tekan Enter untuk kembali ke menu...";
+        echo PHP_EOL . "Press Enter to return to the menu...";
         fgets(STDIN);
 
         $this->clearScreen();
     }
 
+    public function editTask()
+    {
+        $index = 1;
+        $allTasks = [];
+
+        while (file_exists($this->filePrefix . "_$index.json")) {
+            $tasks = $this->readTasks($this->filePrefix . "_$index.json");
+            $allTasks = array_merge($allTasks, $tasks);
+            $index++;
+        }
+
+        echo "Enter task number to edit: ";
+        $taskNumber = (int) trim(fgets(STDIN));
+
+        if (!isset($allTasks[$taskNumber - 1])) {
+            echo "Task not found." . PHP_EOL;
+            sleep(2);
+            return;
+        }
+
+        echo "New task title: ";
+        $allTasks[$taskNumber - 1]['title'] = trim(fgets(STDIN));
+
+        echo "New task description: ";
+        $allTasks[$taskNumber - 1]['description'] = trim(fgets(STDIN));
+
+        $this->saveTasks($allTasks);
+        echo "Task updated successfully!" . PHP_EOL;
+        sleep(2);
+        $this->clearScreen();
+    }
+
+    public function deleteTask()
+    {
+        $index = 1;
+        $allTasks = [];
+
+        while (file_exists($this->filePrefix . "_$index.json")) {
+            $tasks = $this->readTasks($this->filePrefix . "_$index.json");
+            $allTasks = array_merge($allTasks, $tasks);
+            $index++;
+        }
+
+        echo "Enter task number to delete: ";
+        $taskNumber = (int) trim(fgets(STDIN));
+
+        if (!isset($allTasks[$taskNumber - 1])) {
+            echo "Task not found." . PHP_EOL;
+            sleep(2);
+            return;
+        }
+
+        unset($allTasks[$taskNumber - 1]);
+        $allTasks = array_values($allTasks); // Re-index array after deletion
+
+        $this->saveTasks($allTasks);
+        echo "Task deleted successfully!" . PHP_EOL;
+        sleep(2);
+        $this->clearScreen();
+    }
+
     public function clearScreen()
     {
-        echo chr(27) . "[2J" . chr(27) . "[;H";
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            system('cls');
+        } else {
+            system('clear');
+        }
     }
 }
-
 
 function main()
 {
@@ -144,14 +207,14 @@ function main()
 
     while (true) {
         $todo->clearScreen();
-        echo "Todo List:  " . PHP_EOL;
-        echo "MENU:  ". PHP_EOL;
+        echo "Todo List:" . PHP_EOL;
+        echo "MENU:" . PHP_EOL;
         echo "1. ADD Todo" . PHP_EOL;
         echo "2. LIST Todo" . PHP_EOL;
         echo "3. DETAIL Todo" . PHP_EOL;
         echo "4. EDIT Todo" . PHP_EOL;
         echo "5. DELETE Todo" . PHP_EOL;
-        echo "6. Left" . PHP_EOL;
+        echo "6. Exit" . PHP_EOL;
         echo "Pick option: ";
         $choice = trim(fgets(STDIN));
 
@@ -172,7 +235,7 @@ function main()
                 $todo->deleteTask();
                 break;
             case '6':
-                echo "Left program." . PHP_EOL;
+                echo "Exiting program." . PHP_EOL;
                 exit(0);
             default:
                 echo "Invalid option." . PHP_EOL;
